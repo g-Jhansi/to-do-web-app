@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced To-Do App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #74ebd5, #9face6);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .todo-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            text-align: center;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .task {
+            background: #f0f0f0;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .task.completed {
+            text-decoration: line-through;
+            color: grey;
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <h2> To-Do App</h2>
+        <input type="text" id="taskInput" placeholder="Add a new task">
+        <input type="datetime-local" id="taskDateTime">
+        <button onclick="addTask()">Add Task</button>
+        <button onclick="exportTasks()">Export Tasks</button>
+        <input type="file" onchange="importTasks(event)">
+        <div id="taskList"></div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const taskEl = document.createElement('div');
+                taskEl.className = 'task' + (task.completed ? ' completed' : '');
+                taskEl.innerHTML = `
+                    <strong>${task.text}</strong><br>
+                    <small>${task.datetime || ''}</small>
+                    <div class="actions">
+                        <button onclick="toggleTask(${index})">${task.completed ? 'Undo' : 'Complete'}</button>
+                        <button onclick="editTask(${index})">Edit</button>
+                        <button onclick="deleteTask(${index})">Delete</button>
+                    </div>
+                `;
+                list.appendChild(taskEl);
+            });
+        }
+
+        function addTask() {
+            const text = document.getElementById('taskInput').value;
+            const datetime = document.getElementById('taskDateTime').value;
+            if (text) {
+                tasks.push({ text, datetime, completed: false });
+                saveTasks();
+                renderTasks();
+                document.getElementById('taskInput').value = '';
+                document.getElementById('taskDateTime').value = '';
+            }
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            saveTasks();
+            renderTasks();
+        }
+
+        function editTask(index) {
+            const newText = prompt("Edit task:", tasks[index].text);
+            if (newText !== null) {
+                tasks[index].text = newText;
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            saveTasks();
+            renderTasks();
+        }
+
+        function exportTasks() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "tasks.json");
+            dlAnchorElem.click();
+        }
+
+        function importTasks(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                tasks = JSON.parse(e.target.result);
+                saveTasks();
+                renderTasks();
+            };
+            reader.readAsText(file);
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
